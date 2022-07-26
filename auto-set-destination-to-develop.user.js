@@ -8,37 +8,48 @@
 // @grant        none
 // ==/UserScript==
 
-(function() {
+(function(history) {
     'use strict';
 
     const mainBranch = 'main';
     const devBranch = 'develop';
-    const urlPaths = location.pathname.split('/');
-    const compareLocation = urlPaths.indexOf('compare') + 1;
 
-    function extractBranches() {
-        return urlPaths.slice(compareLocation, urlPaths.length).join('/');
+    var splitUrlPaths = (url) => new URL(url).pathname.split('/');
+
+    var getCompareIndex = (urlPaths) => urlPaths.indexOf('compare') + 1;
+
+    var getCompareIndexFromUrl = (url) => getCompareIndex(splitUrlPaths(url));
+
+    var extractBranches = (url) => {
+        let urlPaths = splitUrlPaths(url)
+        return urlPaths.slice(getCompareIndex(urlPaths), urlPaths.length).join('/')
     }
 
-    function getBranches() {
+    var getBranches = (url) => {
+        let compareLocation = getCompareIndexFromUrl(url);
         if (compareLocation === 0) return null;
 
-        if (location.pathname.indexOf('...') > -1) {
-            return extractBranches();
+        const branch = extractBranches(url);
+
+        if (url.indexOf('...') > -1) {
+            return branch;
         }
 
-        const endsWithSlash = location.pathname.endsWith('/') ? 1 : 0;
+        const endsWithSlash = url.endsWith('/') ? 1 : 0;
 
-        if (compareLocation + endsWithSlash < urlPaths.length) {
-            const branch = extractBranches();
+        if (compareLocation + endsWithSlash < splitUrlPaths(url).length) {
             return `${mainBranch}...${branch}`;
         }
 
         return null;
     }
 
-    function checkUrlPath() {
-        const branches = getBranches();
+    var checkUrlPath = (url) => {
+        if (url == null) return;
+
+        const branches = getBranches(url);
+        let urlPaths = splitUrlPaths(url)
+        let compareLocation = getCompareIndex(urlPaths);
 
         console.log(branches);
 
@@ -47,14 +58,20 @@
         const [dest, source] = branches.split('...');
 
         if (dest === mainBranch && source !== devBranch && source !== mainBranch) {
-            const newBranches = `${devBranch}...${source}`;
-            const newUrlPath = urlPaths.slice(0, compareLocation).join('/') + '/' + newBranches;
+            const newCompare = `${devBranch}...${source}`;
+            const newUrlPath = urlPaths.slice(0, compareLocation).join('/') + '/' + newCompare;
 
             location.pathname = newUrlPath;
         }
     }
 
-    document.addEventListener('pjax:end', checkUrlPath);
 
-    checkUrlPath();
-})();
+    history.pushState = new Proxy(history.pushState, {
+        apply: (target, thisArg, argList) => {
+            checkUrlPath(argList[2]);
+            return target.apply(thisArg, argList);
+        },
+    });
+
+    checkUrlPath(location.href);
+})(window.history);
