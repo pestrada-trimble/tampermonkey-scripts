@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Auto set destination branch to develop on pull requests
-// @version      0.1
+// @version      0.2
 // @description  Auto set destination branch to develop on pull requests
 // @author       Pedro Estrada
 // @match        https://github.com/e-buildernoc/*
