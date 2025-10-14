@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Concourse Failed Line Scrollbar Markers
-// @version      0.2.1
+// @version      0.3
 // @description  Concourse Failed Line Scrollbar Markers
 // @author       Pedro Estrada
 // @match        https://concourse-ci.e-builder.net/*
