@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name         Concourse Failed Line Scrollbar Markers
-// @version      0.2
+// @version      0.2.1
 // @description  Concourse Failed Line Scrollbar Markers
 // @author       Pedro Estrada
 // @match        https://concourse-ci.e-builder.net/*
 // @match        https://concourse-ci-tools.e-builder.net/*
-// @icon         https://www.google.com/s2/favicons?sz=64&domain=github.com
+// @icon         https://concourse-ci.e-builder.net/public/images/favicon.png
 // @grant        none
 // ==/UserScript==
 
