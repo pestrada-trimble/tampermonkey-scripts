@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Concourse Failed Line Scrollbar Markers
-// @version      0.3
+// @version      0.4
 // @description  Concourse Failed Line Scrollbar Markers
 // @author       Pedro Estrada
 // @match        https://concourse-ci.e-builder.net/*
@@ -10,7 +10,7 @@
 // ==/UserScript==
 
 (() => {
-    const REGEX = /Failed\s.*?\[\<?\s*(?:\d+\s*m\s+\d+\s*s|\d+\s*(?:ms|s|m))\]/; // single-row test
+    const REGEX = /\bFailed\s.*?\[\<?\s*(?:\d+\s*m\s+\d+\s*s|\d+\s*(?:ms|s|m))\]$/; // single-row test
     const DEBUG = true; // set true for minimal debug
     const RESCAN_DELAY = 50; // ms
     const STYLE = `
@@ -65,10 +65,10 @@
         const failRows = [];
         rows.forEach(tr => {
             if (tr.classList.contains('tm-fail-row')) {
-                if (REGEX.test(tr.textContent || '')) failRows.push(tr);
+                if (REGEX.test(tr.textContent.trim() || '')) failRows.push(tr);
                 return;
             }
-            const text = tr.textContent || '';
+            const text = tr.textContent.trim() || '';
             if (!REGEX.test(text)) return;
             tr.classList.add('tm-fail-row');
             failRows.push(tr);
