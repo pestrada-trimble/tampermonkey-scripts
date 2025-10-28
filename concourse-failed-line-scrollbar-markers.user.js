@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Concourse Failed Line Scrollbar Markers
-// @version      0.5
+// @version      0.6
 // @description  Concourse Failed Line Scrollbar Markers
 // @author       Pedro Estrada
 // @match        https://concourse-ci.e-builder.net/*
@@ -54,7 +54,7 @@
             font-size:13px;
             font-weight:500;
             position:absolute;
-            top:62px;
+            top:58px;
             right:300px;
             padding:10px 16px;
             border:none;
@@ -219,7 +219,11 @@
             <span class="tm-fail-index" aria-live="polite"> ${1} / ${failRows.length}</span>
             <button type="button" class="tm-fail-next" aria-label="Next failed test" title="Next failed test (wrap)">▼</button>
             <span>|</span>
-            <button type="button" class="tm-copy-fail-tests" aria-label="Copy failed test names" title="Copy failed test names to clipboard">📋</button>
+            <button type="button" class="tm-copy-fail-tests" aria-label="Copy failed test names" title="Copy failed test names to clipboard">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-copy" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zM2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1z"/>
+            </svg>
+            </button>
         `;
         let currentIndex = -1;
         const updateIndexDisplay = () => {
