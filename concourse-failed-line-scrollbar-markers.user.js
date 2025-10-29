@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Concourse Failed Line Scrollbar Markers
-// @version      0.6
+// @version      0.7
 // @description  Concourse Failed Line Scrollbar Markers
 // @author       Pedro Estrada
 // @match        https://concourse-ci.e-builder.net/*
@@ -10,7 +10,7 @@
 // ==/UserScript==
 
 (() => {
-    const REGEX = /\bFailed\s.*?\[\<?\s*(?:\d+\s*m\s+\d+\s*s|\d+\s*(?:ms|s|m))\]$/; // single-row test
+    const REGEX = /\bFailed\s(.*)?\[\<?\s*(?:\d+\s*m\s+\d+\s*s|\d+\s*(?:ms|s|m))\]$/; // single-row test
     const DEBUG = true; // set true for minimal debug
     const RESCAN_DELAY = 50; // ms
     const STYLE = `
@@ -243,7 +243,9 @@
         });
         headerNavEl.querySelector('.tm-copy-fail-tests').addEventListener('click', () => {
             const failNames = failRows.map(tr => {
-                return tr.textContent.trim().split(' ')[3];
+                const text = tr.textContent.trim().match(REGEX)?.[1]?.trim() || '';
+                dbg('Copying failed test name:', text);
+                return text;
             });
             navigator.clipboard.writeText(failNames.join('\n')).then(() => {
                 dbg('Copied failed test names to clipboard');
