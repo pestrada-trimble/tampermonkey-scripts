@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Concourse Failed Line Scrollbar Markers
-// @version      0.7
+// @version      0.8
 // @description  Concourse Failed Line Scrollbar Markers
 // @author       Pedro Estrada
 // @match        https://concourse-ci.e-builder.net/*
@@ -198,7 +198,7 @@
             <button type="button" class="tm-expand-failed-build-steps" aria-label="Expand failed build steps" title="Expand failed build steps">Expand Failed Build Steps</button>
         `;
         helperNavEl.querySelector('.tm-expand-failed-build-steps').addEventListener('click', () => {
-            const failedBuildSteps = document.querySelectorAll('.build-step:has(div[data-step-state="failed"]) .header');
+            const failedBuildSteps = document.querySelectorAll('.build-step:has(div[data-step-state="failed"]):not(:has(.step-body)) .header');
 
             failedBuildSteps.forEach(stepEl => {
                 stepEl.click();
