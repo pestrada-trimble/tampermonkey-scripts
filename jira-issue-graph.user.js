@@ -21,6 +21,7 @@
     const MAX_ISSUES = 200;
     const KEEP_LINK_LABELS = new Set(["blocks", "is blocked by"]);
     const NODE_RADIUS = 40;
+    const NODE_STROKE_WIDTH = 4;
     const ARROW_GAP = 6;
     const TOOLTIP_ID = "jira-issue-graph-tooltip";
     const TOOLTIP_OFFSET = 24;
@@ -614,7 +615,7 @@
     }
 
     function getNodeStrokeWidth(node) {
-        return 4;
+        return NODE_STROKE_WIDTH;
     }
 
     function getNodeStrokeColor(node) {
