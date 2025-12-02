@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jira Issue Graph (D3)
 // @namespace    https://github.com/pestrad
-// @version      0.2.0
+// @version      0.3.0
 // @description  Visualize Jira issue link graphs directly in the browser using D3.js.
 // @author       pestrad
 // @match        https://*.atlassian.net/*
@@ -37,6 +37,75 @@
         ["DONE", "#64DD17"],
     ]);
 
+    const COLOR_THEMES = {
+        light: {
+            "--jira-issue-graph-color-scheme": "light",
+            "--jira-issue-graph-button-bg": "#669df1",
+            "--jira-issue-graph-button-fg": "#292a2e",
+            "--jira-issue-graph-button-shadow": "0 2px 6px rgba(0, 0, 0, 0.2)",
+            "--jira-issue-graph-panel-bg": "#ffffff",
+            "--jira-issue-graph-panel-border": "#dfe1e6",
+            "--jira-issue-graph-panel-shadow": "0 8px 24px rgba(9, 30, 66, 0.25)",
+            "--jira-issue-graph-panel-text": "#172b4d",
+            "--jira-issue-graph-header-bg": "#f4f5f7",
+            "--jira-issue-graph-header-border": "#dfe1e6",
+            "--jira-issue-graph-header-text": "#172b4d",
+            "--jira-issue-graph-node-fill": "#1f2a44",
+            "--jira-issue-graph-node-stroke": "#ffffff",
+            "--jira-issue-graph-node-text": "#ffffff",
+            "--jira-issue-graph-epic-fill": "#ffc400",
+            "--jira-issue-graph-epic-stroke": "#172b4d",
+            "--jira-issue-graph-epic-text": "#172b4d",
+            "--jira-issue-graph-root-fill": "#36b37e",
+            "--jira-issue-graph-root-text": "#ffffff",
+            "--jira-issue-graph-link-stroke": "#97a0af",
+            "--jira-issue-graph-arrow-fill": "#42526e",
+            "--jira-issue-graph-arrow-stroke": "#dfe1e6",
+            "--jira-issue-graph-link-label-fill": "#172b4d",
+            "--jira-issue-graph-link-label-stroke": "#ffffff",
+            "--jira-issue-graph-tooltip-bg": "rgba(9, 30, 66, 0.92)",
+            "--jira-issue-graph-tooltip-text": "#ffffff",
+            "--jira-issue-graph-status-text": "#172b4d",
+        },
+        dark: {
+            "--jira-issue-graph-color-scheme": "dark",
+            "--jira-issue-graph-button-bg": "#1558bc",
+            "--jira-issue-graph-button-fg": "#cecfd2",
+            "--jira-issue-graph-button-shadow": "0 2px 6px rgba(0, 0, 0, 0.45)",
+            "--jira-issue-graph-panel-bg": "#2b2c2f",
+            "--jira-issue-graph-panel-border": "#2e3a4f",
+            "--jira-issue-graph-panel-shadow": "0 12px 28px rgba(0, 0, 0, 0.55)",
+            "--jira-issue-graph-panel-text": "#e3e7ee",
+            "--jira-issue-graph-header-bg": "#232f43",
+            "--jira-issue-graph-header-border": "#2e3a4f",
+            "--jira-issue-graph-header-text": "#f5f7ff",
+            "--jira-issue-graph-node-fill": "#24334b",
+            "--jira-issue-graph-node-stroke": "#e2e8f0",
+            "--jira-issue-graph-node-text": "#f5f7ff",
+            "--jira-issue-graph-epic-fill": "#f5b23c",
+            "--jira-issue-graph-epic-stroke": "#0f172a",
+            "--jira-issue-graph-epic-text": "#0f172a",
+            "--jira-issue-graph-root-fill": "#2dd4bf",
+            "--jira-issue-graph-root-text": "#052e16",
+            "--jira-issue-graph-link-stroke": "#536583",
+            "--jira-issue-graph-arrow-fill": "#9fb4d8",
+            "--jira-issue-graph-arrow-stroke": "#1b2636",
+            "--jira-issue-graph-link-label-fill": "#e2e8f0",
+            "--jira-issue-graph-link-label-stroke": "rgba(15, 23, 42, 0.85)",
+            "--jira-issue-graph-tooltip-bg": "rgba(15, 23, 42, 0.92)",
+            "--jira-issue-graph-tooltip-text": "#e2e8f0",
+            "--jira-issue-graph-status-text": "#e3e7ee",
+        },
+    };
+    const COLOR_THEME_MEDIA_QUERY = "(prefers-color-scheme: dark)";
+    const themeMediaQuery =
+        typeof window !== "undefined" && typeof window.matchMedia === "function"
+            ? window.matchMedia(COLOR_THEME_MEDIA_QUERY)
+            : null;
+
+    let activeThemeName = "light";
+    let activeTheme = COLOR_THEMES.light;
+
     let simulation = null;
     let svgRoot = null;
     let zoomLayer = null;
@@ -56,19 +125,17 @@
 
     GM_addStyle(`
     #${BUTTON_ID} {
-      position: fixed;
-      top: 116px;
-      right: 40px;
       z-index: 9999;
       padding: 8px 16px;
-      border-radius: 6px;
+      border-radius: 3px;
       border: none;
-      background: #0052cc;
-      color: #fff;
+      background: var(--jira-issue-graph-button-bg, #1558bc);
+      color: var(--jira-issue-graph-button-fg, #cecfd2);
       font-size: 14px;
-      font-weight: 600;
+      font-weight: 500;
       cursor: pointer;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+      /*box-shadow: var(--jira-issue-graph-button-shadow, 0 2px 6px rgba(0, 0, 0, 0.2));*/
+      transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
     }
     #${BUTTON_ID}[data-loading="true"] {
       opacity: 0.6;
@@ -82,12 +149,15 @@
       width: 80%;
       height: 80%;
       z-index: 9999;
-      background: #fff;
-      border: 1px solid #dfe1e6;
+      background: var(--jira-issue-graph-panel-bg, #ffffff);
+      border: 1px solid var(--jira-issue-graph-panel-border, #dfe1e6);
       border-radius: 8px;
-      box-shadow: 0 8px 24px rgba(9, 30, 66, 0.25);
+      box-shadow: var(--jira-issue-graph-panel-shadow, 0 8px 24px rgba(9, 30, 66, 0.25));
       display: none;
       flex-direction: column;
+      color: var(--jira-issue-graph-panel-text, #172b4d);
+      color-scheme: var(--jira-issue-graph-color-scheme, light);
+      transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
     }
     #${PANEL_ID}[data-open="true"] {
       display: flex;
@@ -97,16 +167,19 @@
       align-items: center;
       justify-content: space-between;
       padding: 8px 12px;
-      border-bottom: 1px solid #dfe1e6;
-      background: #f4f5f7;
+      border-bottom: 1px solid var(--jira-issue-graph-header-border, #dfe1e6);
+      background: var(--jira-issue-graph-header-bg, #f4f5f7);
       font-size: 13px;
       font-weight: 600;
+      color: var(--jira-issue-graph-header-text, #172b4d);
+      transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
     }
     #${PANEL_ID} header button {
       background: none;
       border: none;
       font-size: 16px;
       cursor: pointer;
+      color: inherit;
     }
     #${CY_CONTAINER_ID} {
       flex: 1;
@@ -123,62 +196,66 @@
       cursor: grabbing;
     }
     #${CY_CONTAINER_ID} .jira-issue-graph-node circle {
-      fill: #1f2a44;
-      stroke: #fff;
+      fill: var(--jira-issue-graph-node-fill, #1f2a44);
+      stroke: var(--jira-issue-graph-node-stroke, #ffffff);
       stroke-width: 2px;
       filter: drop-shadow(0 2px 4px rgba(9, 30, 66, 0.25));
+      transition: fill 0.2s ease, stroke 0.2s ease;
     }
     #${CY_CONTAINER_ID} .jira-issue-graph-node {
       cursor: pointer;
     }
     #${CY_CONTAINER_ID} .jira-issue-graph-node text {
-      fill: #fff;
+      fill: var(--jira-issue-graph-node-text, #ffffff);
       font-size: 10px;
       text-anchor: middle;
       pointer-events: none;
+      transition: fill 0.2s ease;
     }
     #${CY_CONTAINER_ID} .jira-issue-graph-node.node-epic circle {
-      fill: #ffc400;
-      stroke: #172b4d;
+      fill: var(--jira-issue-graph-epic-fill, #ffc400);
+      stroke: var(--jira-issue-graph-epic-stroke, #172b4d);
     }
     #${CY_CONTAINER_ID} .jira-issue-graph-node.node-epic text {
-      fill: #172b4d;
+      fill: var(--jira-issue-graph-epic-text, #172b4d);
     }
     #${CY_CONTAINER_ID} .jira-issue-graph-node.root-issue circle {
-      fill: #36b37e;
+      fill: var(--jira-issue-graph-root-fill, #36b37e);
     }
     #${CY_CONTAINER_ID} .jira-issue-graph-node.root-issue text {
-      fill: #fff;
+      fill: var(--jira-issue-graph-root-text, #ffffff);
     }
     #${CY_CONTAINER_ID} .jira-issue-graph-link {
-      stroke: #97a0af;
+      stroke: var(--jira-issue-graph-link-stroke, #97a0af);
       stroke-width: 2px;
       fill: none;
       stroke-linecap: round;
+      transition: stroke 0.2s ease;
     }
     #${CY_CONTAINER_ID} .jira-issue-graph-link-label {
-      fill: #172b4d;
+      fill: var(--jira-issue-graph-link-label-fill, #172b4d);
       font-size: 8px;
       pointer-events: none;
       paint-order: stroke fill;
-      stroke: #fff;
+      stroke: var(--jira-issue-graph-link-label-stroke, #ffffff);
       stroke-width: 3px;
       stroke-linejoin: round;
+      transition: fill 0.2s ease, stroke 0.2s ease;
     }
     #${TOOLTIP_ID} {
       position: fixed;
       z-index: 10000;
       pointer-events: none;
       padding: 6px 8px;
-      background: rgba(9, 30, 66, 0.92);
-      color: #fff;
+      background: var(--jira-issue-graph-tooltip-bg, rgba(9, 30, 66, 0.92));
+      color: var(--jira-issue-graph-tooltip-text, #ffffff);
       font-size: 11px;
       border-radius: 4px;
       box-shadow: 0 2px 8px rgba(9, 30, 66, 0.4);
       max-width: 280px;
       line-height: 1.4;
       opacity: 0;
-      transition: opacity 0.1s ease;
+      transition: opacity 0.1s ease, background 0.2s ease, color 0.2s ease;
     }
     #${TOOLTIP_ID}[data-visible="true"] {
       opacity: 1;
@@ -186,8 +263,66 @@
     #${PANEL_ID} .jira-issue-graph-status {
       padding: 12px;
       font-size: 13px;
+      color: var(--jira-issue-graph-status-text, #172b4d);
     }
   `);
+
+    applyTheme(getPreferredThemeName());
+    setupThemeListeners();
+
+    function getPreferredThemeName() {
+        if (!themeMediaQuery) {
+            return "light";
+        }
+        return themeMediaQuery.matches ? "dark" : "light";
+    }
+
+    function applyTheme(themeName) {
+        const resolvedName = Object.prototype.hasOwnProperty.call(COLOR_THEMES, themeName)
+            ? themeName
+            : "light";
+        const theme = COLOR_THEMES[resolvedName];
+        const root = document.documentElement;
+        activeThemeName = resolvedName;
+        activeTheme = theme;
+        Object.entries(theme).forEach(([property, value]) => {
+            root.style.setProperty(property, value);
+        });
+        root.dataset.jiraIssueGraphTheme = resolvedName;
+        syncThemeAttributes(resolvedName);
+        if (nodeSelection) {
+            updateNodeLabels(nodeSelection);
+        }
+    }
+
+    function setupThemeListeners() {
+        if (!themeMediaQuery) {
+            return;
+        }
+        const handler = (event) => {
+            applyTheme(event.matches ? "dark" : "light");
+        };
+        if (typeof themeMediaQuery.addEventListener === "function") {
+            themeMediaQuery.addEventListener("change", handler);
+        } else if (typeof themeMediaQuery.addListener === "function") {
+            themeMediaQuery.addListener(handler);
+        }
+    }
+
+    function syncThemeAttributes(themeName) {
+        const panel = document.getElementById(PANEL_ID);
+        if (panel) {
+            panel.dataset.theme = themeName;
+            panel.style.colorScheme = themeName;
+        }
+        const button = document.getElementById(BUTTON_ID);
+        if (button) {
+            button.dataset.theme = themeName;
+        }
+        if (tooltipEl) {
+            tooltipEl.dataset.theme = themeName;
+        }
+    }
 
     function ensureButton() {
         if (document.getElementById(BUTTON_ID)) {
@@ -197,8 +332,14 @@
         button.id = BUTTON_ID;
         button.type = "button";
         button.textContent = "Issue Graph";
+        button.dataset.theme = activeThemeName;
         button.addEventListener("click", onToggleGraph);
-        document.body.appendChild(button);
+        const container = document.querySelector('[id^="jira-issue-header"] div[role="group"] > div:first-child');
+        if (container) {
+            container.prepend(button);
+        } else {
+            console.warn("jira-issue-graph", "Unable to find header button container");
+        }
     }
 
     function ensurePanel() {
@@ -217,6 +358,8 @@
       <div class="jira-issue-graph-status">Ready.</div>
       <div id="${CY_CONTAINER_ID}"></div>
     `;
+                panel.dataset.theme = activeThemeName;
+                panel.style.colorScheme = activeThemeName;
 
         const closeButton = panel.querySelector("header button");
         closeButton.addEventListener("click", () => setPanelOpen(false));
@@ -365,8 +508,8 @@
             .attr("orient", "auto-start-reverse")
             .append("path")
             .attr("d", "M 0 1 L 10 6 L 0 11 z")
-            .attr("fill", "#42526e")
-            .attr("stroke", "#dfe1e6")
+            .attr("fill", "var(--jira-issue-graph-arrow-fill, #42526e)")
+            .attr("stroke", "var(--jira-issue-graph-arrow-stroke, #dfe1e6)")
             .attr("stroke-width", 1.2);
 
         zoomLayer = svgRoot.append("g").attr("class", "jira-issue-graph-zoom");
@@ -581,6 +724,7 @@
             tooltipEl = document.createElement("div");
             tooltipEl.id = TOOLTIP_ID;
             tooltipEl.dataset.visible = "false";
+            tooltipEl.dataset.theme = activeThemeName;
             document.body.appendChild(tooltipEl);
         }
         return tooltipEl;
@@ -620,9 +764,13 @@
 
     function getNodeStrokeColor(node) {
         if (!node) {
-            return "#ffffff";
+            return activeTheme["--jira-issue-graph-node-stroke"] ?? "#ffffff";
         }
-        return getStatusStrokeColor(node.status);
+        const statusColor = getStatusStrokeColor(node.status);
+        if (statusColor && statusColor !== "#ffffff") {
+            return statusColor;
+        }
+        return activeTheme["--jira-issue-graph-node-stroke"] ?? "#ffffff";
     }
 
     function buildNodeLabel(key, status) {
@@ -1146,10 +1294,38 @@ ${trimmedStatus}` : trimmedKey;
         }, 1000);
     }
 
+    function monitorJiraIssueHeader() {
+        const headerSelector = '[id^="jira-issue-header"] div[role="group"] > div:first-child';
+
+        // Try immediately
+        const tryEnsure = () => {
+            const headerElement = document.querySelector(headerSelector);
+            if (headerElement) {
+                ensureButton();
+                return headerElement;
+            }
+            return null;
+        };
+
+        const docObserver = new MutationObserver(() => {
+            const headerElement = tryEnsure();
+            if (headerElement) {
+                // Once header exists, we can also observe it to keep the button present
+                const headerObserver = new MutationObserver(() => {
+                    ensureButton();
+                });
+                headerObserver.observe(headerElement, { childList: true, subtree: true });
+            }
+        });
+        docObserver.observe(document.body, { childList: true, subtree: true });
+        return;
+    }
+
     function bootstrap() {
         ensureButton();
         ensurePanel();
-        monitorNavigation();
+        // monitorNavigation();
+        monitorJiraIssueHeader();
     }
 
     bootstrap();
