@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jira Board Cleanup
 // @namespace    https://github.com/pestrad
-// @version      0.2
+// @version      0.3
 // @description  Hide specific columns on Jira boards based on active quick filters.
 // @author       pestrad
 // @match        https://*.atlassian.net/*
@@ -13,7 +13,8 @@
 
     const QUICK_FILTERS = new Set([
         614, // hide done & r4r
-        622 // hide requirements & backlog
+        622, // hide requirements & backlog
+        1207 // hide done
     ]);
 
     function getActiveQuickFilters() {
@@ -31,6 +32,10 @@
 
     observer.observe(document, { subtree: true, childList: true });
 
+    function buildSelectorForColumn(columnName) {
+        return `div[role=presentation][data-component-selector]:has(div[title="${columnName}"])`;
+    }
+
     function applyCustomStyles(activeFilters) {
         const $ = window.jQuery || window.$;
         if (!$) return;
@@ -41,12 +46,21 @@
         activeFilters.forEach(id => {
             $('div[data-testid="platform-board-kit.ui.board.scroll.board-scroll"] > section > div').css('width', 'calc(100vw - 60px)');
 
-            if (id === 614) { // hide done & r4r
-                $('div[role=presentation][data-component-selector]:has(div[title="Ready for Release"]), div[role=presentation][data-component-selector]:has(div[title="Done"])')
-                    .attr('style', 'display: none !important;');
-            } else if (id === 622) { // hide requirements & backlog
-                $('div[role=presentation][data-component-selector]:has(div[title="Requirements"]), div[role=presentation][data-component-selector]:has(div[title="Backlog"])')
-                    .attr('style', 'display: none !important;');
+            switch (id) {
+                case 614: // hide done & r4r
+                    $(`${buildSelectorForColumn("Ready for Release")}, ${buildSelectorForColumn("Done")}`)
+                        .attr('style', 'display: none !important;');
+                    break;
+                case 622: // hide requirements & backlog
+                    $(`${buildSelectorForColumn("Requirements")}, ${buildSelectorForColumn("Backlog")}`)
+                        .attr('style', 'display: none !important;');
+                    break;
+                case 1207: // hide done
+                    $(`${buildSelectorForColumn("Done")}`)
+                        .attr('style', 'display: none !important;');
+                    break;
+                default:
+                    break;
             }
         });
     }
