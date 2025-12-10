@@ -39,7 +39,7 @@
         allColumns.removeAttr('style');
 
         activeFilters.forEach(id => {
-            $('div[data-testid="platform-board-kit.ui.board.scroll.board-scroll"] > section > div').css('width', 'calc(100vw - 50px)');
+            $('div[data-testid="platform-board-kit.ui.board.scroll.board-scroll"] > section > div').css('width', 'calc(100vw - 60px)');
 
             if (id === 614) { // hide done & r4r
                 $('div[role=presentation][data-component-selector]:has(div[title="Ready for Release"]), div[role=presentation][data-component-selector]:has(div[title="Done"])')
