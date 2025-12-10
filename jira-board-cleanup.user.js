@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jira Board Cleanup
 // @namespace    https://github.com/pestrad
-// @version      0.1
+// @version      0.2
 // @description  Hide specific columns on Jira boards based on active quick filters.
 // @author       pestrad
 // @match        https://*.atlassian.net/*
@@ -36,9 +36,11 @@
         if (!$) return;
 
         const allColumns = $('div[role=presentation][data-component-selector]');
-        allColumns.attr('style', 'display: block !important;');
+        allColumns.removeAttr('style');
 
         activeFilters.forEach(id => {
+            $('div[data-testid="platform-board-kit.ui.board.scroll.board-scroll"] > section > div').css('width', 'calc(100vw - 50px)');
+
             if (id === 614) { // hide done & r4r
                 $('div[role=presentation][data-component-selector]:has(div[title="Ready for Release"]), div[role=presentation][data-component-selector]:has(div[title="Done"])')
                     .attr('style', 'display: none !important;');
