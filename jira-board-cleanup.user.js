@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jira Board Cleanup
 // @namespace    https://github.com/pestrad
-// @version      0.3
+// @version      0.4
 // @description  Hide specific columns on Jira boards based on active quick filters.
 // @author       pestrad
 // @match        https://*.atlassian.net/*
@@ -65,5 +65,5 @@
         });
     }
 
-    applyCustomStyles(lastQuickFilters);
+    applyCustomStyles(getActiveQuickFilters());
 })();
