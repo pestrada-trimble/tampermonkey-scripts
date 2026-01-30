@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jira Board Cleanup
 // @namespace    https://github.com/pestrad
-// @version      0.4
+// @version      0.5
 // @description  Hide specific columns on Jira boards based on active quick filters.
 // @author       pestrad
 // @match        https://*.atlassian.net/*
@@ -40,29 +40,38 @@
         const $ = window.jQuery || window.$;
         if (!$) return;
 
-        const allColumns = $('div[role=presentation][data-component-selector]');
-        allColumns.removeAttr('style');
+        $('div[role=presentation][data-touched=true]').removeAttr('style');
 
-        activeFilters.forEach(id => {
-            $('div[data-testid="platform-board-kit.ui.board.scroll.board-scroll"] > section > div').css('width', 'calc(100vw - 60px)');
+        if (activeFilters.size === 0) return;
 
-            switch (id) {
-                case 614: // hide done & r4r
-                    $(`${buildSelectorForColumn("Ready for Release")}, ${buildSelectorForColumn("Done")}`)
-                        .attr('style', 'display: none !important;');
-                    break;
-                case 622: // hide requirements & backlog
-                    $(`${buildSelectorForColumn("Requirements")}, ${buildSelectorForColumn("Backlog")}`)
-                        .attr('style', 'display: none !important;');
-                    break;
-                case 1207: // hide done
-                    $(`${buildSelectorForColumn("Done")}`)
-                        .attr('style', 'display: none !important;');
-                    break;
-                default:
-                    break;
-            }
-        });
+        // Set board width once
+        $('div[data-testid="platform-board-kit.ui.board.scroll.board-scroll"] > section > div').css('width', 'calc(100vw - 60px)');
+
+        const columnSelectors = [];
+        const indexSelectors = [];
+        const baseDragDropSelector = 'div[role=presentation]:not([data-component-selector])[data-drop-target-for-element=true]';
+
+        if (activeFilters.has(622)) { // hide requirements & backlog
+            columnSelectors.push(buildSelectorForColumn("Requirements"), buildSelectorForColumn("Backlog"));
+            indexSelectors.push(`${baseDragDropSelector}:eq(0)`, `${baseDragDropSelector}:eq(1)`);
+        }
+
+        if (activeFilters.has(614)) { // hide done & r4r
+            columnSelectors.push(buildSelectorForColumn("Ready for Release"), buildSelectorForColumn("Done"));
+            indexSelectors.push(`${baseDragDropSelector}:last-child`, `${baseDragDropSelector}:nth-last-child(2)`);
+        }
+
+        if (activeFilters.has(1207)) { // hide done
+            columnSelectors.push(buildSelectorForColumn("Done"));
+            indexSelectors.push(`${baseDragDropSelector}:last-child`);
+        }
+
+        const allSelectors = [...columnSelectors, ...indexSelectors];
+        if (allSelectors.length > 0) {
+            $(allSelectors.join(', '))
+                .attr('style', 'display: none !important;')
+                .attr('data-touched', 'true');
+        }
     }
 
     applyCustomStyles(getActiveQuickFilters());
