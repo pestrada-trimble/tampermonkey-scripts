@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Github Add Concourse CI Badge
-// @version      0.2.1
+// @version      0.2.2
 // @description  Add Concourse CI badge to Github ebuildernoc repos
 // @author       Pedro Estrada
 // @match        https://github.com/e-buildernoc/*
@@ -12,7 +12,8 @@
 (() => {
     'use strict';
 
-    const concourseBaseUrl = 'https://concourse-ci.e-builder.net';
+    const concourseDevBaseUrl = 'https://concourse-ci.e-builder.net';
+    const concourseToolsBaseUrl = 'https://concourse-ci-tools.e-builder.net';
     const BADGE_MARKER_CLASS = 'concourse-ci-badge-added';
     
     if (window.concourseCiBadgeLoaded) return;
@@ -32,7 +33,7 @@
             return 'org-repos';
         }
         
-        const match = url.match(/^https:\/\/github\.com\/e-buildernoc\/([^/]+)$/);
+        const match = url.match(/^https:\/\/github\.com\/e-buildernoc\/([^/]+)/);
         if (match) {
             return { type: 'repo', name: match[1] };
         }
@@ -83,10 +84,12 @@
                 await waitForElement('div[class^="ReposList"] ul[class^="ListView"] li');
                 addBadgesForAllRepos(true);
             } else if (pageType.type === 'repo') {
-                const titleComponent = await waitForElement('#repo-title-component');
+                // const titleComponent = await waitForElement('#repo-title-component');
+                const titleComponent = await waitForElement('nav[class*="Breadcrumbs-BreadcrumbsBase"] ol li:last-child a');
                 if (!titleComponent.classList.contains(BADGE_MARKER_CLASS)) {
                     titleComponent.classList.add(BADGE_MARKER_CLASS); // Mark immediately to prevent race condition
-                    addBadgeWithLink(pageType.name, titleComponent);
+                    addBadgeWithLink(concourseDevBaseUrl, pageType.name, "dev", null, titleComponent);
+                    addBadgeWithLink(concourseToolsBaseUrl, pageType.name, "tools", null, titleComponent);
                 }
             }
         } catch (err) {
@@ -105,7 +108,8 @@
                 const elementToAddBadgeAfter = repoElement.querySelector('span[class^="prc-Label-Label"]');
                 if (elementToAddBadgeAfter) {
                     repoElement.classList.add(BADGE_MARKER_CLASS);
-                    addBadgeWithLink(repoName, null, elementToAddBadgeAfter);
+                    addBadgeWithLink(concourseDevBaseUrl, repoName, "dev", null, elementToAddBadgeAfter);
+                    addBadgeWithLink(concourseToolsBaseUrl, repoName, "tools", null, elementToAddBadgeAfter);
                 }
             });
         } else {
@@ -118,19 +122,20 @@
                 const elementToAddBadgeAfter = repoElement.querySelector('span[title]');
                 if (elementToAddBadgeAfter) {
                     repoElement.classList.add(BADGE_MARKER_CLASS);
-                    addBadgeWithLink(repoName, null, elementToAddBadgeAfter);
+                    addBadgeWithLink(concourseDevBaseUrl, repoName, "dev", null, elementToAddBadgeAfter);
+                    addBadgeWithLink(concourseToolsBaseUrl, repoName, "tools", null, elementToAddBadgeAfter);
                 }
             });
         }
     }
 
-    function addBadgeWithLink(repoName, parentElement, siblingElement) {
-        const concourseApiRepoUrl = `${concourseBaseUrl}/api/v1/teams/main/pipelines/${repoName}`;
-        const concourseRepoUrl = `${concourseBaseUrl}/teams/main/pipelines/${repoName}`;
+    function addBadgeWithLink(baseUrl, repoName, title, parentElement, siblingElement) {
+        const concourseApiRepoUrl = `${baseUrl}/api/v1/teams/main/pipelines/${repoName}`;
+        const concourseRepoUrl = `${baseUrl}/teams/main/pipelines/${repoName}`;
 
         GM_xmlhttpRequest({
             method: 'GET',
-            url: `${concourseApiRepoUrl}/badge`,
+            url: `${concourseApiRepoUrl}/badge?title=${title}`,
             responseType: 'blob',
             onload: (response) => {
                 if (response.status !== 200) {
