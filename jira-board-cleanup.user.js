@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Jira Board Cleanup
 // @namespace    https://github.com/pestrad
-// @version      0.5
+// @version      0.6
 // @description  Hide specific columns on Jira boards based on active quick filters.
 // @author       pestrad
 // @match        https://*.atlassian.net/*
@@ -25,9 +25,20 @@
         return new Set(quickFilterParam.map(id => parseInt(id, 10)).filter(id => QUICK_FILTERS.has(id)));
     }
 
+    function isOnBoardPage() {
+        return window.location.pathname.includes('/board') ||
+               window.location.search.includes('rapidView');
+    }
+
+    let debounceTimer = null;
     const observer = new MutationObserver(() => {
-        const currentQuickFilters = getActiveQuickFilters();
-        applyCustomStyles(currentQuickFilters);
+        if (!isOnBoardPage()) return;
+
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            const currentQuickFilters = getActiveQuickFilters();
+            applyCustomStyles(currentQuickFilters);
+        }, 100);
     });
 
     observer.observe(document, { subtree: true, childList: true });
