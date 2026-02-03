@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Github Add Concourse CI Badge
-// @version      0.3.0
+// @version      0.3.1
 // @description  Add Concourse CI badge to Github ebuildernoc repos
 // @author       Pedro Estrada
 // @match        https://github.com/e-buildernoc*
@@ -75,6 +75,9 @@
     function getPageType(url) {
         if (!url) return null;
         url = url.split(/[?#]/)[0];
+
+        // remove the trailing slash
+        url = url.replace(/\/$/, '');
         
         if (url === 'https://github.com/e-buildernoc') {
             return 'org-home';
