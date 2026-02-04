@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Github Add Concourse CI Badge
-// @version      0.3.1
+// @version      0.3.2
 // @description  Add Concourse CI badge to Github ebuildernoc repos
 // @author       Pedro Estrada
 // @match        https://github.com/e-buildernoc*
@@ -23,6 +23,12 @@
             margin-left: 8px;
             margin-bottom: 4px;
             align-items: center;
+        }
+
+        .ot-fixed {
+            position: fixed;
+            top: 22px;
+            z-index: 34;
         }
 
         .ot-badge {
@@ -195,6 +201,16 @@
         }
     }
 
+    function positionFixedBadges() {
+        const badges = document.querySelector('.ot-badges.ot-fixed');
+        const searchButtonGroup = document.querySelector('[class^="Search-module__searchButtonGroup"]');
+        if (badges && searchButtonGroup) {
+            const rect = searchButtonGroup.getBoundingClientRect();
+            const badgesWidth = badges.offsetWidth;
+            badges.style.left = `${rect.left - badgesWidth - 16}px`;
+        }
+    }
+
     async function tryAddBadge(pageType, pipelines, baseUrl, title) {
         try {
             if (pageType === 'org-home') {
@@ -204,8 +220,9 @@
                 await waitForElement('div[class^="ReposList"] ul[class^="ListView"] li');
                 addBadgesForAllRepos(true, pipelines, baseUrl, title);
             } else if (pageType.type === 'repo') {
-                const titleComponent = await waitForElement('nav[class*="Breadcrumbs-BreadcrumbsBase"]');
-                addBadge(title, pipelines.get(pageType.name)?.status || 'unknown', baseUrl, pageType.name, titleComponent);
+                const titleComponent = document.querySelector('div[class^="prc-Stack-Stack"]');
+                addBadge(title, pipelines.get(pageType.name)?.status || 'unknown', baseUrl, pageType.name, titleComponent, null, 'ot-fixed');
+                requestAnimationFrame(positionFixedBadges);
             }
         } catch (err) {
             console.warn('Concourse badge: element not found', err.message);
@@ -214,7 +231,7 @@
 
 
 
-    function addBadge(title, status, url, repoName, parentElement = null, siblingElement = null) {
+    function addBadge(title, status, url, repoName, parentElement = null, siblingElement = null, extraClass = '', siblingPosition = 'after') {
         const hasParent = parentElement !== null;
         const hasSibling = siblingElement !== null;
 
@@ -231,7 +248,7 @@
             if (existingBadge) {
                 const statusSpan = existingBadge.querySelector('.ot-status');
                 if (statusSpan) {
-                    statusSpan.className = `ot-status ${status}`;
+                    statusSpan.className = `ot-status ${status} ${extraClass}`;
                     statusSpan.textContent = status;
                 }
             }
@@ -242,10 +259,11 @@
         let badges = container.querySelector('.ot-badges');
         if (!badges) {
             badges = document.createElement('div');
-            badges.className = 'ot-badges';
+            badges.className = `ot-badges ${extraClass}`;
 
             if (hasSibling) {
-                siblingElement.insertAdjacentElement('afterend', badges);
+                const position = siblingPosition === 'before' ? 'beforebegin' : 'afterend';
+                siblingElement.insertAdjacentElement(position, badges);
             } else {
                 parentElement.appendChild(badges);
             }
@@ -330,4 +348,7 @@
     // Initialize
     setupNavigationListeners();
     checkUrl(location.href);
+
+    // Reposition fixed badges on resize
+    window.addEventListener('resize', positionFixedBadges);
 })();
