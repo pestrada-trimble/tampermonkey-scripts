@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Github Add Concourse CI Badge
-// @version      0.3.2
+// @version      0.3.3
 // @description  Add Concourse CI badge to Github ebuildernoc repos
 // @author       Pedro Estrada
 // @match        https://github.com/e-buildernoc*
@@ -248,7 +248,7 @@
             if (existingBadge) {
                 const statusSpan = existingBadge.querySelector('.ot-status');
                 if (statusSpan) {
-                    statusSpan.className = `ot-status ${status} ${extraClass}`;
+                    statusSpan.className = `ot-status ${status}`;
                     statusSpan.textContent = status;
                 }
             }
