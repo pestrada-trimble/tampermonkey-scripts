@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Concourse Better High Density 
-// @version      0.1
+// @version      0.2
 // @description  Concourse Better High Density 
 // @author       Pedro Estrada
 // @match        https://concourse-ci.e-builder.net/*
