@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Concourse Better High Density 
-// @version      0.2
+// @version      0.3
 // @description  Concourse Better High Density 
 // @author       Pedro Estrada
 // @match        https://concourse-ci.e-builder.net/*
@@ -98,6 +98,8 @@
         clearTimeout(timeoutId);
         timeoutId = setTimeout(() => init(), 50);
     }
+
+    setInterval(() => init(), 30_000);
 
     init();
 })();
