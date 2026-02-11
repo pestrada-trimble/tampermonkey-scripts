@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Auto set destination branch to develop on pull requests
-// @version      0.2
+// @version      0.3
 // @description  Auto set destination branch to develop on pull requests
 // @author       Pedro Estrada
 // @match        https://github.com/e-buildernoc/*
@@ -13,6 +13,9 @@
 
     const mainBranch = 'main';
     const devBranch = 'develop';
+
+    // Cache of repo path → whether develop branch exists
+    const developBranchCache = new Map();
 
     var splitUrlPaths = (url) => new URL(url).pathname.split('/');
 
@@ -44,7 +47,25 @@
         return null;
     }
 
-    var checkUrlPath = (url) => {
+    async function hasDevelopBranch(url) {
+        const repoPath = new URL(url).pathname.split('/').slice(1, 3).join('/');
+        if (developBranchCache.has(repoPath)) {
+            return developBranchCache.get(repoPath);
+        }
+
+        try {
+            const response = await fetch(`/${repoPath}/tree/${devBranch}`, { method: 'HEAD' });
+            const exists = response.status === 200;
+            developBranchCache.set(repoPath, exists);
+            return exists;
+        } catch (e) {
+            console.warn('Auto-set-destination: failed to check for develop branch', e);
+            // If the check fails, don't redirect (safe default)
+            return false;
+        }
+    }
+
+    var checkUrlPath = async (url) => {
         if (url == null) return;
 
         const branches = getBranches(url);
@@ -58,6 +79,11 @@
         const [dest, source] = branches.split('...');
 
         if (dest === mainBranch && source !== devBranch && source !== mainBranch) {
+            if (!await hasDevelopBranch(url)) {
+                console.log('Auto-set-destination: no develop branch found, keeping main as base');
+                return;
+            }
+
             const newCompare = `${devBranch}...${source}`;
             const newUrlPath = urlPaths.slice(0, compareLocation).join('/') + '/' + newCompare;
 
