@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Github Add Concourse CI Badge
-// @version      0.3.3
+// @version      0.3.4
 // @description  Add Concourse CI badge to Github ebuildernoc repos
 // @author       Pedro Estrada
 // @match        https://github.com/e-buildernoc*
@@ -348,6 +348,8 @@
     // Initialize
     setupNavigationListeners();
     checkUrl(location.href);
+
+    setInterval(() => {currentUrl = null; checkUrl(location.href)}, 30_000);
 
     // Reposition fixed badges on resize
     window.addEventListener('resize', positionFixedBadges);
