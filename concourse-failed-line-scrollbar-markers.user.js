@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Concourse Failed Line Scrollbar Markers
-// @version      0.8
+// @version      0.9
 // @description  Concourse Failed Line Scrollbar Markers
 // @author       Pedro Estrada
 // @match        https://concourse-ci.e-builder.net/*
@@ -10,7 +10,7 @@
 // ==/UserScript==
 
 (() => {
-    const REGEX = /\bFailed\s(.*)?\[\<?\s*(?:\d+\s*m\s+\d+\s*s|\d+\s*(?:ms|s|m))\]$/; // single-row test
+    const REGEX = /^\d{2}:\d{2}:\d{2}\s+Failed\s(.*)?\[\<?\s*(?:\d+\s*m\s+\d+\s*s|\d+\s*(?:ms|s|m))\]$/; // single-row test
     const DEBUG = true; // set true for minimal debug
     const RESCAN_DELAY = 50; // ms
     const STYLE = `
